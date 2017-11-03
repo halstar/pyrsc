@@ -1,2 +1,2 @@
 # pyrsc
-Python-based RomSet Cleaner
+Python-based ROMs set Cleaner
