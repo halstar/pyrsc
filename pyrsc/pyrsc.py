@@ -10,7 +10,7 @@ __all__ = []
 __version__ = 1.0
 __date__ = '2017-11-03'
 __updated__ = '2017-11-03'
-program_long_desc = 'This program generates cleans ROM sets from undesired ROMs'
+program_long_desc = 'This program helps and cleans ROM sets from undesired ROMs'
 
 # Default log level
 LOG_LEVEL = 1
@@ -37,24 +37,30 @@ def make_flat(path_to_roms_dir):
         if os.path.basename(dirname) != os.path.basename(path_to_roms_dir):
             for filename in filenames:
                 full_path = os.path.join(dirname, filename)
-                if IS_DRY_RUN:
-                    log(2, "Would move up file: " + full_path)
+                if os.path.isfile(os.path.join(path_to_roms_dir, filename)):
+                    log(1, "Will not move up file, as it already exists: " + full_path)
                 else:
-                    log(2, "Moving up file: " + full_path)
-                    shutil.move(full_path, path_to_roms_dir)
+                    if IS_DRY_RUN:
+                        log(2, "Would move up file: " + full_path)
+                    else:
+                        log(2, "Moving up file: " + full_path)
+                        shutil.move(full_path, path_to_roms_dir)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         if os.path.basename(dirname) != os.path.basename(path_to_roms_dir):
             if IS_DRY_RUN:
                 log(1, "Would remove directory: " + dirname)
             else:
-                print("Removing directory: " + dirname)
-                shutil.rmtree(dirname, ignore_errors=True)
+                if os.listdir(dirname):
+                    log(1, "Will not remove directory, as it is not empty: " + dirname)
+                else:
+                    print("Removing directory: " + dirname)
+                    shutil.rmtree(dirname, ignore_errors=True)
 
     return 0
 
 
-def check_and_get_list(list_string):
+def check_and_get_patterns_list(list_string):
 
     list = []
 
@@ -72,6 +78,23 @@ def check_and_get_list(list_string):
                 list.append(pattern)
 
     return list
+
+
+def check_and_get_bioses_list(list_string):
+
+    bios_list = []
+
+    matches = re.findall(r"\w+", list_string)
+
+    if not matches:
+        log(1, "ERROR: badly formatted input list of patterns; shall be like \"BIOS1 BIOS2\"")
+    else:
+        for match in matches:
+            pattern = match.replace(" ", "").lower()
+            log(2, "Adding pattern: '" + pattern + "'")
+            bios_list.append(pattern)
+
+    return bios_list
 
 
 def get_bioses_from_roms_and_dat(path_to_roms_dir, path_to_dat_file):
@@ -94,11 +117,47 @@ def get_bioses_from_roms_and_dat(path_to_roms_dir, path_to_dat_file):
     return bios_list
 
 
+def get_parent_rom(tree, rom):
+
+    nodes = tree.findall('.//game[@name="' + rom + '"]')
+    if len(nodes) == 0:
+        return None
+    else:
+        return nodes[0]
+
+
+def get_root_rom(tree, node):
+
+    if not node:
+        return None, False
+
+    name = node.attrib.get("name")
+    clone_of = node.attrib.get("cloneof")
+    rom_of = node.attrib.get("romof")
+    sample_of = node.attrib.get("sampleof")
+    is_bios = node.attrib.get("isbios")
+
+    if not clone_of and not rom_of and not sample_of:
+        if is_bios:
+            return name, True
+        else:
+            return name, None
+    elif clone_of:
+        parent = get_parent_rom(tree, clone_of)
+        return get_root_rom(tree, parent)
+    elif rom_of:
+        parent = get_parent_rom(tree, rom_of)
+        return get_root_rom(tree, parent)
+    elif sample_of:
+        parent = get_parent_rom(tree, sample_of)
+        return get_root_rom(tree, parent)
+
+
 def del_files_without(path_to_roms_dir, inclusion_list_string):
 
     log(0, "\nRemoving files with name NOT matching all of input patterns...\n")
 
-    inclusion_list = check_and_get_list(inclusion_list_string)
+    inclusion_list = check_and_get_patterns_list(inclusion_list_string)
 
     if not inclusion_list:
         return 2
@@ -113,7 +172,7 @@ def del_files_without(path_to_roms_dir, inclusion_list_string):
                     else:
                         log(1, "Deleting: " + filename)
                         os.remove(full_name)
-                    break;
+                    break
 
     return 0
 
@@ -122,7 +181,7 @@ def del_files_with(path_to_roms_dir, exclusion_list_string):
 
     log(0, "\nRemoving files with name matching any of input patterns...\n")
 
-    exclusion_list = check_and_get_list(exclusion_list_string)
+    exclusion_list = check_and_get_patterns_list(exclusion_list_string)
 
     if not exclusion_list:
         return 2
@@ -137,7 +196,7 @@ def del_files_with(path_to_roms_dir, exclusion_list_string):
                     else:
                         log(1, "Deleting: " + filename)
                         os.remove(full_name)
-                    break;
+                    break
 
     return 0
 
@@ -259,7 +318,7 @@ def del_duplicates(path_to_roms_dir, path_to_dat_file, path_to_reference_roms_di
                                 log(2, "Keeping BIOS: " + full_name2)
                         elif size == size2:
                             if IS_DRY_RUN:
-                                log(1, "Would remove " + full_name + ", duplicate of " + full_name2)
+                                log(1, "Would delete " + full_name + ", duplicate of " + full_name2)
                             else:
                                 log(1, "Removing " + full_name + ", duplicate of " + full_name2)
                                 os.remove(full_name)
@@ -288,7 +347,7 @@ def del_roms_clones(path_to_roms_dir, path_to_dat_file):
                 if (rom_of and rom_of not in bios_list) or clone_of or sample_of:
                     full_name = os.path.join(dirname, filename)
                     if IS_DRY_RUN:
-                        log(1, "Would remove " + full_name)
+                        log(1, "Would delete " + full_name)
                     else:
                         log(1, "Removing " + full_name)
                         os.remove(full_name)
@@ -298,7 +357,7 @@ def del_roms_clones(path_to_roms_dir, path_to_dat_file):
 
 def del_roms_with_samples(path_to_roms_dir, path_to_dat_file):
 
-    log(0, "\nRemoving ROMs with samples...\n")
+    log(0, "\nDeleting ROMs with samples...\n")
 
     file = open(path_to_dat_file, 'r')
     tree = ElementTree.parse(file)
@@ -317,27 +376,71 @@ def del_roms_with_samples(path_to_roms_dir, path_to_dat_file):
             if rom in roms_with_samples:
                 full_name = os.path.join(dirname, filename)
                 if IS_DRY_RUN:
-                    log(1, "Would remove " + full_name)
+                    log(1, "Would delete " + full_name)
                 else:
-                    log(1, "Removing " + full_name)
+                    log(1, "Deleting " + full_name)
                     os.remove(full_name)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         if os.path.basename(dirname) == "samples":
             if IS_DRY_RUN:
-                log(1, "Would remove samples directory: " + dirname)
+                log(1, "Would delete samples directory: " + dirname)
             else:
-                log(1, "Removing samples directory: " + dirname)
+                log(1, "Deleting samples directory: " + dirname)
                 shutil.rmtree(dirname, ignore_errors=True)
+
+    return 0
+
+
+def del_roms_older_than(path_to_roms_dir, path_to_dat_file, year_string):
+
+    log(0, "\nDeleting ROMs older than " + year_string + " \n")
+
+    try:
+        year_integer = int(year_string)
+    except ValueError:
+        log(1, "ERROR: badl input year (\"" + year_string + "\"); please use an integer")
+        return 2
+
+    # Get any BIOS ROM found in the input ROMs directory, to prevent removing them
+    bios_list = get_bioses_from_roms_and_dat(path_to_roms_dir, path_to_dat_file)
+
+    file = open(path_to_dat_file, 'r')
+    tree = ElementTree.parse(file)
+
+    for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
+        for filename in filenames:
+            rom = filename.split(".")[0]
+            element = tree.findall('.//game[@name="' + rom + '"]/year')
+            if element:
+                rom_year_string = element[0].text
+                try:
+                    rom_year_integer = int(rom_year_string)
+                except ValueError:
+                    # In case the year string in .dat file is corrupt, e.g. "198?", force ROM deletion
+                    rom_year_integer = 0
+                if rom_year_integer < year_integer:
+                    full_name = os.path.join(dirname, filename)
+                    if rom in bios_list:
+                        if IS_DRY_RUN:
+                            log(2, "Would keep BIOS: " + full_name)
+                        else:
+                            log(2, "Keeping BIOS: " + full_name)
+                    else:
+                        if IS_DRY_RUN:
+                            log(1, "Would delete: " + filename + " (\"" + rom_year_string + "\")")
+                        else:
+                            log(1, "Deleting: " + filename + " (\"" + rom_year_string + "\")")
+                            os.remove(full_name)
 
     return 0
 
 
 def del_if_description_has(path_to_roms_dir, path_to_dat_file, exclusion_list_string):
 
-    log(0, "\nRemoving files with description matching any of input patterns...\n")
+    log(0, "\nDeleting files with description matching any of input patterns...\n")
 
-    exclusion_list = check_and_get_list(exclusion_list_string)
+    exclusion_list = check_and_get_patterns_list(exclusion_list_string)
 
     if not exclusion_list:
         return 2
@@ -366,9 +469,9 @@ def del_if_description_has(path_to_roms_dir, path_to_dat_file, exclusion_list_st
 
 def del_if_manufacturer_has(path_to_roms_dir, path_to_dat_file, exclusion_list_string):
 
-    log(0, "\nRemoving files with manufacturer matching any of input patterns...\n")
+    log(0, "\nDeleting files with manufacturer matching any of input patterns...\n")
 
-    exclusion_list = check_and_get_list(exclusion_list_string)
+    exclusion_list = check_and_get_patterns_list(exclusion_list_string)
 
     if not exclusion_list:
         return 2
@@ -395,6 +498,46 @@ def del_if_manufacturer_has(path_to_roms_dir, path_to_dat_file, exclusion_list_s
     return 0
 
 
+def del_if_bios_is(path_to_roms_dir, path_to_dat_file, input_bios_list_string, del_on_match):
+
+    if del_on_match:
+        log(0, "\nRemoving ROMs matching input BIOS(es)...\n")
+    else:
+        log(0, "\nRemoving ROMs NOT matching input BIOS(es)...\n")
+
+    input_bios_list = check_and_get_bioses_list(input_bios_list_string)
+
+    if not input_bios_list:
+        return 2
+
+    file = open(path_to_dat_file, 'r')
+    tree = ElementTree.parse(file)
+
+    for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
+        for filename in filenames:
+            rom = filename.split(".")[0]
+            element = tree.findall('.//game[@name="' + rom + '"]')
+            if element:
+                root, is_bios = get_root_rom(tree, element[0])
+                if root and is_bios:
+                    log(2, rom + " root ROM is a BIOS: " + root)
+                    if (del_on_match and root.lower() in input_bios_list) or\
+                       (not del_on_match and root.lower() not in input_bios_list):
+                        full_name = os.path.join(dirname, filename)
+                        if IS_DRY_RUN:
+                            log(1, "Would delete: " + filename + " (" + root + ")")
+                        else:
+                            log(1, "Deleting: " + filename + " (" + root + ")")
+                            os.remove(full_name)
+
+                elif root:
+                    log(2, rom + " root ROM is no BIOS but: " + root + "; keeping ROM")
+                else:
+                    log(2, rom + " got not root ROM; keeping ROM")
+
+    return 0
+
+
 def main(argv=None):
 
     global LOG_LEVEL
@@ -411,15 +554,18 @@ def main(argv=None):
                     '       *** Cleaning based on .dat file analysis\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-clones]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-with-samples]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-roms-older-than=INT]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-description-with=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-manufacturer-with=STRING]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-if-bios-is=STRING]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-if-bios-isnt=STRING]\n' \
                     '       *** Other utilities\n' \
                     '       ' + len(program_name) * ' ' + ' [--make-flat]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-duplicates --ref-roms-dir=STRING]\n'
 
     # Check python version is the minimum expected one
     if sys.version_info[0] < REQUIRED_PYTHON_VERSION:
-        log(1, "ERROR: this tool requires at least Python version " + REQUIRED_PYTHON_VERSION)
+        log(1, "ERROR: this tool requires at least Python version " + str(REQUIRED_PYTHON_VERSION))
         sys.exit(2)
 
     # Setup options
@@ -512,6 +658,12 @@ def main(argv=None):
                           action="store_true",
                           dest="del_roms_with_samples",
                           help="from input .dat file analysis, delete all ROMs using sound samples; also delete all samples directories")
+        parser.add_option("-a",
+                          "--del-roms-older-than",
+                          action="store",
+                          dest="del_roms_older_than_year",
+                          help="from input .dat file analysis, delete all ROMs with yead field older than the input year",
+                          metavar="INT")
         parser.add_option("-i",
                           "--del-if-description-has",
                           action="store",
@@ -523,6 +675,18 @@ def main(argv=None):
                           action="store",
                           dest="del_if_manufacturer_has_string",
                           help="from input .dat file analysis, delete all ROMs with manufacturer field matching any of the provided string patterns",
+                          metavar="STRING")
+        parser.add_option("-b",
+                          "--del-if-bios-is",
+                          action="store",
+                          dest="del_if_bios_is_string",
+                          help="from input .dat file analysis, delete all ROMs with parent BIOS matching one of the provided BIOS(es)",
+                          metavar="STRING")
+        parser.add_option("-z",
+                          "--del-if-bios-isnt",
+                          action="store",
+                          dest="del_if_bios_isnt_string",
+                          help="from input .dat file analysis, delete all ROMs with parent BIOS NOT matching one of the provided BIOS(es)",
                           metavar="STRING")
 
         # Set defaults
@@ -569,12 +733,28 @@ def main(argv=None):
             log(1, "ERROR: setting --del-roms-clones requires --dat-file to be also set")
             return 2
 
+        if opts.del_roms_with_samples and not opts.dat_file:
+            log(1, "ERROR: setting --del-roms-with-samples requires --dat-file to be also set")
+            return 2
+
+        if opts.del_roms_older_than_year and not opts.dat_file:
+            log(1, "ERROR: setting --del-roms-older-than requires --dat-file to be also set")
+            return 2
+
         if opts.del_if_description_has_string and not opts.dat_file:
             log(1, "ERROR: setting --del-if-description-has requires --dat-file to be also set")
             return 2
 
         if opts.del_if_manufacturer_has_string and not opts.dat_file:
             log(1, "ERROR: setting --del-if-manufacturer-has requires --dat-file to be also set")
+            return 2
+
+        if opts.del_if_bios_is_string and not opts.dat_file:
+            log(1, "ERROR: setting --del-if-bios-is requires --dat-file to be also set")
+            return 2
+
+        if opts.del_if_bios_isnt_string and not opts.dat_file:
+            log(1, "ERROR: setting --del-if-bios-isnt requires --dat-file to be also set")
             return 2
 
         if opts.dat_file and not os.path.isfile(opts.dat_file):
@@ -599,22 +779,22 @@ def main(argv=None):
 
     if opts.del_files_with_string:
         status = del_files_with(opts.roms_dir, opts.del_files_with_string)
-        if status !=0:
+        if status != 0:
             return status
 
     if opts.del_ntsc_versions:
         status = del_pal_or_ntsc_files(opts.roms_dir, True)
-        if status !=0:
+        if status != 0:
             return status
 
     if opts.del_pal_versions:
         status = del_pal_or_ntsc_files(opts.roms_dir, False)
-        if status !=0:
+        if status != 0:
             return status
 
     if opts.del_first_variants:
         status = del_variant_files(opts.roms_dir, True)
-        if status !=0:
+        if status != 0:
             return status
 
     if opts.del_last_variants:
@@ -637,6 +817,11 @@ def main(argv=None):
         if status != 0:
             return status
 
+    if opts.del_roms_older_than_year:
+        status = del_roms_older_than(opts.roms_dir, opts.dat_file, opts.del_roms_older_than_year)
+        if status != 0:
+            return status
+
     if opts.del_if_description_has_string:
         status = del_if_description_has(opts.roms_dir, opts.dat_file, opts.del_if_description_has_string)
         if status != 0:
@@ -646,6 +831,17 @@ def main(argv=None):
         status = del_if_manufacturer_has(opts.roms_dir, opts.dat_file, opts.del_if_manufacturer_has_string)
         if status != 0:
             return status
+
+    if opts.del_if_bios_is_string:
+        status = del_if_bios_is(opts.roms_dir, opts.dat_file, opts.del_if_bios_is_string, True)
+        if status != 0:
+            return status
+
+    if opts.del_if_bios_isnt_string:
+        status = del_if_bios_is(opts.roms_dir, opts.dat_file, opts.del_if_bios_isnt_string, False)
+        if status != 0:
+            return status
+
 
 # Module run in main mode
 if __name__ == "__main__":
