@@ -4,6 +4,10 @@
 
 * Improve/replace --del-first-variants/--del-last-variants to possibly select variants against more precise criterias, e.g. if Japan, Europe & USA versions of a ROM are found altogether, only keep Europe version, etc.
 
-* Add more filtering/cleaning capabilities via input .dat file browsing.
+* Add more filtering/cleaning capabilities via input .dat file browsing?
 
 * Add a lightweight OS-agnostic GUI on top of the command line?
+
+* Turn README how-to to Wiki pages?
+
+* etc.
