@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+"""
+Python-based ROMs Set Cleaner, to help and clean large ROM sets from undesired ROMs.
+"""
+
 import os
 import os.path
 import shutil
@@ -66,11 +72,11 @@ def check_and_get_patterns_list(list_string):
 
     matches = re.search(r"^(\*[^\*]+\*\s*)+$", list_string)
     if not matches:
-        log(1, "ERROR: badly formatted input list of patterns; shall be like \"*pattern1* *pattern2*\"")
+        log(0, "ERROR: badly formatted input list of patterns; shall be like \"*pattern1* *pattern2*\"")
     else:
         matches = re.findall(r"\*[^\*]+\*", list_string)
         if not matches:
-            log(1, "ERROR: badly formatted input list of patterns; shall be like \"*pattern1* *pattern2*\"")
+            log(0, "ERROR: badly formatted input list of patterns; shall be like \"*pattern1* *pattern2*\"")
         else:
             for match in matches:
                 pattern = match.replace("*", "")
@@ -87,7 +93,7 @@ def check_and_get_bioses_list(list_string):
     matches = re.findall(r"\w+", list_string)
 
     if not matches:
-        log(1, "ERROR: badly formatted input list of patterns; shall be like \"BIOS1 BIOS2\"")
+        log(0, "ERROR: badly formatted input list of patterns; shall be like \"BIOS1 BIOS2\"")
     else:
         for match in matches:
             pattern = match.replace(" ", "").lower()
@@ -101,8 +107,8 @@ def get_bioses_from_roms_and_dat(path_to_roms_dir, path_to_dat_file):
 
     bios_list = []
 
-    file = open(path_to_dat_file, 'r')
-    tree = ElementTree.parse(file)
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
@@ -320,7 +326,7 @@ def del_duplicates(path_to_roms_dir, path_to_dat_file, path_to_reference_roms_di
                             if IS_DRY_RUN:
                                 log(1, "Would delete " + full_name + ", duplicate of " + full_name2)
                             else:
-                                log(1, "Removing " + full_name + ", duplicate of " + full_name2)
+                                log(1, "Deleting " + full_name + ", duplicate of " + full_name2)
                                 os.remove(full_name)
 
     return 0
@@ -333,8 +339,8 @@ def del_roms_clones(path_to_roms_dir, path_to_dat_file):
     # Get any BIOS ROM found in the input ROMs directory, to prevent removing them
     bios_list = get_bioses_from_roms_and_dat(path_to_roms_dir, path_to_dat_file)
 
-    file = open(path_to_dat_file, 'r')
-    tree = ElementTree.parse(file)
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
@@ -349,7 +355,7 @@ def del_roms_clones(path_to_roms_dir, path_to_dat_file):
                     if IS_DRY_RUN:
                         log(1, "Would delete " + full_name)
                     else:
-                        log(1, "Removing " + full_name)
+                        log(1, "Deleting " + full_name)
                         os.remove(full_name)
 
     return 0
@@ -359,8 +365,8 @@ def del_roms_with_samples(path_to_roms_dir, path_to_dat_file):
 
     log(0, "\nDeleting ROMs with samples...\n")
 
-    file = open(path_to_dat_file, 'r')
-    tree = ElementTree.parse(file)
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
 
     roms_with_samples = []
 
@@ -399,14 +405,14 @@ def del_roms_older_than(path_to_roms_dir, path_to_dat_file, year_string):
     try:
         year_integer = int(year_string)
     except ValueError:
-        log(1, "ERROR: badl input year (\"" + year_string + "\"); please use an integer")
+        log(0, "ERROR: badl input year (\"" + year_string + "\"); please use an integer")
         return 2
 
     # Get any BIOS ROM found in the input ROMs directory, to prevent removing them
     bios_list = get_bioses_from_roms_and_dat(path_to_roms_dir, path_to_dat_file)
 
-    file = open(path_to_dat_file, 'r')
-    tree = ElementTree.parse(file)
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
@@ -445,8 +451,8 @@ def del_if_description_has(path_to_roms_dir, path_to_dat_file, exclusion_list_st
     if not exclusion_list:
         return 2
 
-    file = open(path_to_dat_file, 'r')
-    tree = ElementTree.parse(file)
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
@@ -476,8 +482,8 @@ def del_if_manufacturer_has(path_to_roms_dir, path_to_dat_file, exclusion_list_s
     if not exclusion_list:
         return 2
 
-    file = open(path_to_dat_file, 'r')
-    tree = ElementTree.parse(file)
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
@@ -510,8 +516,8 @@ def del_if_bios_is(path_to_roms_dir, path_to_dat_file, input_bios_list_string, d
     if not input_bios_list:
         return 2
 
-    file = open(path_to_dat_file, 'r')
-    tree = ElementTree.parse(file)
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
@@ -565,7 +571,7 @@ def main(argv=None):
 
     # Check python version is the minimum expected one
     if sys.version_info[0] < REQUIRED_PYTHON_VERSION:
-        log(1, "ERROR: this tool requires at least Python version " + str(REQUIRED_PYTHON_VERSION))
+        log(0, "ERROR: this tool requires at least Python version " + str(REQUIRED_PYTHON_VERSION))
         sys.exit(2)
 
     # Setup options
@@ -706,59 +712,59 @@ def main(argv=None):
 
         # Check some of the options
         if not opts.roms_dir:
-            log(1, "ERROR: missing input path to ROMs directory. Try --help")
+            log(0, "ERROR: missing input path to ROMs directory. Try --help")
             return 2
 
         if not os.path.isdir(opts.roms_dir):
-            log(1, "ERROR: " + opts.roms_dir + " directory not found")
+            log(0, "ERROR: " + opts.roms_dir + " directory not found")
             return 2
 
         if opts.dat_file and not os.path.isfile(opts.dat_file):
-            log(1, "ERROR: " + opts.dat_file + " file not found")
+            log(0, "ERROR: " + opts.dat_file + " file not found")
             return 2
 
         if opts.del_duplicates and not opts.reference_roms_dir:
-            log(1, "ERROR: setting --del-duplicates requires --ref-roms-dir to be also set")
+            log(0, "ERROR: setting --del-duplicates requires --ref-roms-dir to be also set")
             return 2
 
         if opts.reference_roms_dir and not os.path.isdir(opts.reference_roms_dir):
-            log(1, "ERROR: " + opts.reference_roms_dir + " directory not found")
+            log(0, "ERROR: " + opts.reference_roms_dir + " directory not found")
             return 2
 
         if opts.del_duplicates and not opts.dat_file:
-            log(1, "ERROR: setting --del-duplicates requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-duplicates requires --dat-file to be also set")
             return 2
 
         if opts.del_roms_clones and not opts.dat_file:
-            log(1, "ERROR: setting --del-roms-clones requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-roms-clones requires --dat-file to be also set")
             return 2
 
         if opts.del_roms_with_samples and not opts.dat_file:
-            log(1, "ERROR: setting --del-roms-with-samples requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-roms-with-samples requires --dat-file to be also set")
             return 2
 
         if opts.del_roms_older_than_year and not opts.dat_file:
-            log(1, "ERROR: setting --del-roms-older-than requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-roms-older-than requires --dat-file to be also set")
             return 2
 
         if opts.del_if_description_has_string and not opts.dat_file:
-            log(1, "ERROR: setting --del-if-description-has requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-if-description-has requires --dat-file to be also set")
             return 2
 
         if opts.del_if_manufacturer_has_string and not opts.dat_file:
-            log(1, "ERROR: setting --del-if-manufacturer-has requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-if-manufacturer-has requires --dat-file to be also set")
             return 2
 
         if opts.del_if_bios_is_string and not opts.dat_file:
-            log(1, "ERROR: setting --del-if-bios-is requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-if-bios-is requires --dat-file to be also set")
             return 2
 
         if opts.del_if_bios_isnt_string and not opts.dat_file:
-            log(1, "ERROR: setting --del-if-bios-isnt requires --dat-file to be also set")
+            log(0, "ERROR: setting --del-if-bios-isnt requires --dat-file to be also set")
             return 2
 
         if opts.dat_file and not os.path.isfile(opts.dat_file):
-            log(1, "ERROR: " + opts.dat_file + " file not found")
+            log(0, "ERROR: " + opts.dat_file + " file not found")
             return 2
 
     except Exception as error:
