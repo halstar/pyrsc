@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 
 """
 Python-based ROMs Set Cleaner, to help and clean large ROM sets from undesired ROMs.
