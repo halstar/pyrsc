@@ -6,5 +6,4 @@
 * Add tests to make sure every option is doing what it's expected to do.
 * Add more filtering/cleaning capabilities via input .dat file browsing?
 * Add a lightweight OS-agnostic GUI on top of the command line?
-* Turn README how-to to Wiki pages?
 * etc.

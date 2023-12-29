@@ -13,11 +13,10 @@ import re
 from optparse import OptionParser
 from xml.etree import ElementTree
 
-__all__ = []
-__version__ = 1.0
-__date__ = '2017-11-03'
-__updated__ = '2017-11-03'
-program_long_desc = 'This program helps and cleans ROM sets from undesired ROMs'
+__version__           = 1.1
+__date__              = '2017-11-03'
+__updated__           = '2023-12-29'
+__program_long_desc__ = 'This program helps and cleans ROM sets from undesired ROMs'
 
 # Default log level
 LOG_LEVEL = 1
@@ -28,14 +27,17 @@ IS_DRY_RUN = False
 # Required Python version
 REQUIRED_PYTHON_VERSION = 3
 
+# Count of (possibly) deleted files
+DELETED_FILES_COUNT = 0
+
 
 # Just show log message on STDERR, if log level is enough
 def log(level, message):
 
     if LOG_LEVEL >= level:
         sys.stdout.flush()
-        sys.stderr.write(message + '\n')
-        sys.stderr.flush()
+        sys.stdout.write(message + '\n')
+        sys.stdout.flush()
 
 
 def make_flat(path_to_roms_dir):
@@ -162,6 +164,8 @@ def get_root_rom(tree, node):
 
 def del_files_without(path_to_roms_dir, inclusion_list_string):
 
+    global DELETED_FILES_COUNT
+
     log(0, "\nRemoving files with name NOT matching all of input patterns...\n")
 
     inclusion_list = check_and_get_patterns_list(inclusion_list_string)
@@ -179,12 +183,15 @@ def del_files_without(path_to_roms_dir, inclusion_list_string):
                     else:
                         log(1, "Deleting: " + filename)
                         os.remove(full_name)
+                    DELETED_FILES_COUNT += 1
                     break
 
     return 0
 
 
 def del_files_with(path_to_roms_dir, exclusion_list_string):
+
+    global DELETED_FILES_COUNT
 
     log(0, "\nRemoving files with name matching any of input patterns...\n")
 
@@ -203,12 +210,15 @@ def del_files_with(path_to_roms_dir, exclusion_list_string):
                     else:
                         log(1, "Deleting: " + filename)
                         os.remove(full_name)
+                    DELETED_FILES_COUNT += 1
                     break
 
     return 0
 
 
 def del_pal_or_ntsc_files(path_to_roms_dir, del_ntsc_versions):
+
+    global DELETED_FILES_COUNT
 
     if del_ntsc_versions:
         log(0, "\nRemoving NTSC versions of ROMs...\n")
@@ -255,11 +265,14 @@ def del_pal_or_ntsc_files(path_to_roms_dir, del_ntsc_versions):
             else:
                 log(1, "Deleting: " + file['name'])
                 os.remove(file['full_name'])
+            DELETED_FILES_COUNT += 1
 
     return 0
 
 
 def del_variant_files(path_to_roms_dir, del_first_variants):
+
+    global DELETED_FILES_COUNT
 
     if del_first_variants:
         log(0, "\nRemoving first variants of ROMs...\n")
@@ -298,11 +311,14 @@ def del_variant_files(path_to_roms_dir, del_first_variants):
             else:
                 log(1, "Deleting: " + file['name'])
                 os.remove(file['full_name'])
+            DELETED_FILES_COUNT += 1
 
     return 0
 
 
 def del_duplicates(path_to_roms_dir, path_to_dat_file, path_to_reference_roms_dir):
+
+    global DELETED_FILES_COUNT
 
     log(0, "\nRemoving duplicates in alternate ROMs directory...\n")
 
@@ -329,11 +345,14 @@ def del_duplicates(path_to_roms_dir, path_to_dat_file, path_to_reference_roms_di
                             else:
                                 log(1, "Deleting " + full_name + ", duplicate of " + full_name2)
                                 os.remove(full_name)
+                            DELETED_FILES_COUNT += 1
 
     return 0
 
 
 def del_roms_clones(path_to_roms_dir, path_to_dat_file):
+
+    global DELETED_FILES_COUNT
 
     log(0, "\nRemoving clones of ROMs...\n")
 
@@ -358,11 +377,14 @@ def del_roms_clones(path_to_roms_dir, path_to_dat_file):
                     else:
                         log(1, "Deleting " + full_name)
                         os.remove(full_name)
+                    DELETED_FILES_COUNT += 1
 
     return 0
 
 
 def del_roms_with_samples(path_to_roms_dir, path_to_dat_file):
+
+    global DELETED_FILES_COUNT
 
     log(0, "\nDeleting ROMs with samples...\n")
 
@@ -387,6 +409,7 @@ def del_roms_with_samples(path_to_roms_dir, path_to_dat_file):
                 else:
                     log(1, "Deleting " + full_name)
                     os.remove(full_name)
+                DELETED_FILES_COUNT += 1
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         if os.path.basename(dirname) == "samples":
@@ -439,11 +462,14 @@ def del_roms_older_than(path_to_roms_dir, path_to_dat_file, year_string):
                         else:
                             log(1, "Deleting: " + filename + " (\"" + rom_year_string + "\")")
                             os.remove(full_name)
+                        DELETED_FILES_COUNT += 1
 
     return 0
 
 
 def del_if_description_has(path_to_roms_dir, path_to_dat_file, exclusion_list_string):
+
+    global DELETED_FILES_COUNT
 
     log(0, "\nDeleting files with description matching any of input patterns...\n")
 
@@ -469,12 +495,15 @@ def del_if_description_has(path_to_roms_dir, path_to_dat_file, exclusion_list_st
                         else:
                             log(1, "Deleting: " + filename + " (\"" + description + "\")")
                             os.remove(full_name)
+                        DELETED_FILES_COUNT += 1
                         break
 
     return 0
 
 
 def del_if_manufacturer_has(path_to_roms_dir, path_to_dat_file, exclusion_list_string):
+
+    global DELETED_FILES_COUNT
 
     log(0, "\nDeleting files with manufacturer matching any of input patterns...\n")
 
@@ -500,12 +529,15 @@ def del_if_manufacturer_has(path_to_roms_dir, path_to_dat_file, exclusion_list_s
                         else:
                             log(1, "Deleting: " + filename + " (\"" + manufacturer + "\")")
                             os.remove(full_name)
+                        DELETED_FILES_COUNT += 1
                         break
 
     return 0
 
 
 def del_if_bios_is(path_to_roms_dir, path_to_dat_file, input_bios_list_string, del_on_match):
+
+    global DELETED_FILES_COUNT
 
     if del_on_match:
         log(0, "\nRemoving ROMs matching input BIOS(es)...\n")
@@ -536,7 +568,7 @@ def del_if_bios_is(path_to_roms_dir, path_to_dat_file, input_bios_list_string, d
                         else:
                             log(1, "Deleting: " + filename + " (" + root + ")")
                             os.remove(full_name)
-
+                        DELETED_FILES_COUNT += 1
                 elif root:
                     log(2, rom + " root ROM is no BIOS but: " + root + "; keeping ROM")
                 else:
@@ -549,11 +581,12 @@ def main(argv=None):
 
     global LOG_LEVEL
     global IS_DRY_RUN
-    program_name = os.path.basename(sys.argv[0])
-    program_version = "v%1.1f" % __version__
-    program_build_date = "%s" % __updated__
+    global DELETED_FILES_COUNT
+    program_name           = os.path.basename(sys.argv[0])
+    program_version        = "v%1.1f" % __version__
+    program_build_date     = "%s" % __updated__
     program_version_string = '%%prog %s (%s)' % (program_version, program_build_date)
-    program_usage = 'usage: %prog [-h] [--verbose=INT] [--dry-run] --roms-dir=STRING [--dat-file=STRING]\n' \
+    program_usage          = 'usage: %prog [-h] [--verbose=INT] [--dry-run] --roms-dir=STRING [--dat-file=STRING]\n' \
                     '       *** Cleaning based on file names\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-files-with=STRING] [--del-files-without=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-first-variants] [--del-last-variants]\n' \
@@ -583,7 +616,7 @@ def main(argv=None):
         # Setup options parser
         parser = OptionParser(usage=program_usage,
                               version=program_version_string,
-                              epilog=program_long_desc)
+                              epilog=__program_long_desc__)
         parser.add_option("-v",
                           "--verbose",
                           action="store",
@@ -848,6 +881,11 @@ def main(argv=None):
         status = del_if_bios_is(opts.roms_dir, opts.dat_file, opts.del_if_bios_isnt_string, False)
         if status != 0:
             return status
+
+    if DELETED_FILES_COUNT == 0:
+        log(1, "No matching file")
+    else:
+        log(1, "\nMatching files count: " + str(DELETED_FILES_COUNT))
 
 
 # Module run in main mode
