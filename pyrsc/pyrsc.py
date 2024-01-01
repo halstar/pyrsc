@@ -283,11 +283,11 @@ def del_variant_files(path_to_roms_dir, del_first_variants):
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
-            file_attributes = {}
-            file_attributes['parent_dir'] = dirname
-            file_attributes['name'] = filename
-            file_attributes['rom'] = filename.split("(")[0].strip().lower()
-            file_attributes['full_name'] = os.path.join(dirname, filename)
+            file_attributes                  = {}
+            file_attributes['parent_dir']    = dirname
+            file_attributes['name']          = filename
+            file_attributes['rom']           = filename.split("(")[0].strip().lower()
+            file_attributes['full_name']     = os.path.join(dirname, filename)
             file_attributes['to_be_deleted'] = False
             files_list.append(file_attributes)
 
@@ -303,6 +303,64 @@ def del_variant_files(path_to_roms_dir, del_first_variants):
                         else:
                             file['to_be_deleted'] = True
                         break
+
+    for file in files_list:
+        if file['to_be_deleted']:
+            if IS_DRY_RUN:
+                log(1, "Would delete: " + file['name'])
+            else:
+                log(1, "Deleting: " + file['name'])
+                os.remove(file['full_name'])
+            DELETED_FILES_COUNT += 1
+
+    return 0
+
+
+def del_variant_files_from_string(path_to_roms_dir, match_list_string, del_with_string):
+
+    global DELETED_FILES_COUNT
+
+    log(0, "\nRemoving first variants of ROMs NOT matching any of input patterns...\n")
+
+    match_list = check_and_get_patterns_list(match_list_string)
+
+    if not match_list:
+        return 2
+
+    files_list = []
+
+    for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
+        for filename in filenames:
+            if "(" in filename and ")" in filename:
+                file_attributes                  = {}
+                file_attributes['parent_dir']    = dirname
+                file_attributes['name']          = filename
+                file_attributes['rom']           = filename.split("(")[0].strip().lower()
+                file_attributes['variant']       = filename.split("(")[1].strip().lower()
+                file_attributes['full_name']     = os.path.join(dirname, filename)
+                file_attributes['to_be_deleted'] = False
+                files_list.append(file_attributes)
+            else:
+                log(1, "Ignoring: " + filename)
+
+    for file in files_list:
+        for file2 in files_list:
+            if file['parent_dir'] == file2['parent_dir']:
+                if file['name'] == file2['name']:
+                    pass
+                else:
+                    if file['rom'] == file2['rom']:
+                        for pattern in match_list:
+                            if del_with_string == True:
+                                if pattern.lower() in file2['variant']:
+                                    file2['to_be_deleted'] = True
+                                    break
+                            else:
+                                if pattern.lower() in file2['variant']:
+                                    file2['to_be_deleted'] = False
+                                else:
+                                    file2['to_be_deleted'] = True
+                                    break
 
     for file in files_list:
         if file['to_be_deleted']:
@@ -624,13 +682,15 @@ def main(argv=None):
                     '       *** Cleaning based on file names\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-files-with=STRING] [--del-files-without=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-first-variants] [--del-last-variants]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-variants-with] [--del-variants-without]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-ntsc-versions] [--del-pal-versions]\n' \
                     '       *** Cleaning based on .dat file analysis\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-clones]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-with-samples]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-older-than=INT]\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-if-description-with=STRING]\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-if-manufacturer-with=STRING]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-if-description-has=STRING]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-if-manufacturer-haas=STRING]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-if-comment-has=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-bios-is=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-bios-isnt=STRING]\n' \
                     '       *** Other utilities\n' \
@@ -701,6 +761,18 @@ def main(argv=None):
                           action="store_true",
                           dest="del_last_variants",
                           help="in case variants of a ROM are found, delete last variants & keep first")
+        parser.add_option("-g",
+                          "--del-variants-with",
+                          action="store",
+                          dest="del_variants_with_string",
+                          help="in case variants of a ROM are found, delete all variants matching any of the provided string patterns",
+                          metavar="STRING")
+        parser.add_option("-t",
+                          "--del-variants-without",
+                          action="store",
+                          dest="del_variants_without_string",
+                          help="in case variants of a ROM are found, delete all variants NOT matching any of the provided string patterns",
+                          metavar="STRING")
         parser.add_option("-n",
                           "--del-ntsc-versions",
                           action="store_true",
@@ -885,7 +957,17 @@ def main(argv=None):
         status = del_variant_files(opts.roms_dir, False)
         if status != 0:
             return status
+            
+    if opts.del_variants_with_string:
+        status = del_variant_files_from_string(opts.roms_dir, opts.del_variants_with_string, True)
+        if status != 0:
+            return status
 
+    if opts.del_variants_without_string:
+        status = del_variant_files_from_string(opts.roms_dir, opts.del_variants_without_string, False)
+        if status != 0:
+            return status
+            
     if opts.del_duplicates:
         status = del_duplicates(opts.roms_dir, opts.dat_file, opts.reference_roms_dir)
         if status != 0:
