@@ -535,6 +535,40 @@ def del_if_manufacturer_has(path_to_roms_dir, path_to_dat_file, exclusion_list_s
     return 0
 
 
+def del_if_comment_has(path_to_roms_dir, path_to_dat_file, exclusion_list_string):
+
+    global DELETED_FILES_COUNT
+
+    log(0, "\nDeleting files with comment matching any of input patterns...\n")
+
+    exclusion_list = check_and_get_patterns_list(exclusion_list_string)
+
+    if not exclusion_list:
+        return 2
+
+    with open(path_to_dat_file, 'r') as file:
+        tree = ElementTree.parse(file)
+
+    for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
+        for filename in filenames:
+            rom = filename.split(".")[0]
+            element = tree.findall('.//game[@name="' + rom + '"]/comment')
+            if element:
+                comment = element[0].text
+                for pattern in exclusion_list:
+                    if pattern.lower() in comment.lower():
+                        full_name = os.path.join(dirname, filename)
+                        if IS_DRY_RUN:
+                            log(1, "Would delete: " + filename + " (\"" + comment + "\")")
+                        else:
+                            log(1, "Deleting: " + filename + " (\"" + comment + "\")")
+                            os.remove(full_name)
+                        DELETED_FILES_COUNT += 1
+                        break
+
+    return 0
+
+
 def del_if_bios_is(path_to_roms_dir, path_to_dat_file, input_bios_list_string, del_on_match):
 
     global DELETED_FILES_COUNT
@@ -716,6 +750,12 @@ def main(argv=None):
                           dest="del_if_manufacturer_has_string",
                           help="from input .dat file analysis, delete all ROMs with manufacturer field matching any of the provided string patterns",
                           metavar="STRING")
+        parser.add_option("-k",
+                          "--del-if-comment-has",
+                          action="store",
+                          dest="del_if_comment_has_string",
+                          help="from input .dat file analysis, delete all ROMs with comment field matching any of the provided string patterns",
+                          metavar="STRING")
         parser.add_option("-b",
                           "--del-if-bios-is",
                           action="store",
@@ -787,6 +827,10 @@ def main(argv=None):
 
         if opts.del_if_manufacturer_has_string and not opts.dat_file:
             log(0, "ERROR: setting --del-if-manufacturer-has requires --dat-file to be also set")
+            return 2
+
+        if opts.del_if_comment_has_string and not opts.dat_file:
+            log(0, "ERROR: setting --del-if-comment-has requires --dat-file to be also set")
             return 2
 
         if opts.del_if_bios_is_string and not opts.dat_file:
@@ -869,6 +913,11 @@ def main(argv=None):
 
     if opts.del_if_manufacturer_has_string:
         status = del_if_manufacturer_has(opts.roms_dir, opts.dat_file, opts.del_if_manufacturer_has_string)
+        if status != 0:
+            return status
+
+    if opts.del_if_comment_has_string:
+        status = del_if_comment_has(opts.roms_dir, opts.dat_file, opts.del_if_comment_has_string)
         if status != 0:
             return status
 
