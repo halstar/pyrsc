@@ -46,8 +46,8 @@ C:\Users\JohnDoe\AppData\Local\Programs\Python\Python36-32>python.exe C:\Users\J
 * --help will display the online help.
 * --dry-run will execute a dry-run, nothing will be changed, no file will be deleted.
 * --roms-dir is a mandatory option, that is our entry point: the directory holding ROMs to be cleared, with or without subdirectories.
-* --dat-file is a an option, that is the regular XML .dat file, related to --roms-dir input directory including ROMs.
-* --verbose will let you have more or less information being displaying, to possibly help and understand what is done. 
+* --dat-file is an option, that is the regular XML .dat file, related to --roms-dir input directory including ROMs.
+* --verbose will let you have more or less information being displayed, to possibly help and understand what is done. 
 
 ### Delete files matching patterns
 
@@ -66,6 +66,7 @@ python3 pyrsc.py --roms-dir=~/myRoms --del-files-without="*[!]* *.zip*"
 Any file in ~/myRoms NOT having "[!]" and ".zip", etc. in its name will be removed.
 
 ### Delete first variants of all ROMs
+
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --del-first-variants 
@@ -81,6 +82,7 @@ Balloon Fight (USA).zip
 Applying --del-first-variants will remove the fist 2 variants of this ROM, that is Europe and Japan variants, keeping USA variant.
 
 ### Delete last variants of all ROMs
+
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --del-last-variants 
@@ -96,6 +98,7 @@ Annals Of Rome (1987)(Magic)[a2].zip
 Applying --del-last-variants will remove last 2 variants of this ROM, that is [a] and [a2] variants.
 
 ### Delete variants matching patterns
+
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --del-variants-with="*Japan*"
@@ -111,6 +114,7 @@ Beatmania (USA).chd
 Applying --del-variants-with will remove Japan variants of this ROM, keeping Europe & USA versions.
 
 ### Delete variants not matching patterns
+
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --del-variants-without="*Europe*"
@@ -127,6 +131,7 @@ Animal Football (Korea).chd
 Applying --del-variants-without will remove all variants of this ROM but Europe version.
 
 ### Delete PAL or NTSC variants of all ROMs
+
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --del-ntsc-versions
@@ -143,6 +148,7 @@ Applying --del-ntsc-variants will remove that ROM not having (PAL) pattern, assu
 Applying --del-pal-variants will remove that ROM having (PAL) pattern and keep the other one, assuming it is NTSC.
 
 ### Delete clones of all ROMs
+
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-clones
@@ -176,7 +182,7 @@ This option will also remove any folder named samples found under ~/myRoms.
 
 Call pyrsc like this:
 ```
-python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-roms-older-than 1996
+python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-roms-older-than=1996
 ```
 From the input .dat file analysis, this will delete all ROMs tagged with a date prior 1996.
 
@@ -184,9 +190,9 @@ From the input .dat file analysis, this will delete all ROMs tagged with a date 
 
 Call pyrsc like this:
 ```
-python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-if-description-has "*broken* *bootleg* *hack* *demo* *prototype*"
-python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-if-manufacturer-has "*hack* *bootleg*"
-python3 pyrsc.py --roms-dir=~/myRoms --dat-filemame.dat  --del-if-comment-has "*issue* *demo* *hack* *incomplete* *imperfect*"
+python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-if-description-has="*broken* *bootleg* *hack* *demo* *prototype*"
+python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-if-manufacturer-has="*hack* *bootleg*"
+python3 pyrsc.py --roms-dir=~/myRoms --dat-filemame.dat  --del-if-comment-has="*issue* *demo* *hack* *incomplete* *imperfect*"
 ```
 From the input .dat file analysis, this will delete all ROMs which description/manufacturer/comment attributes match the any the input patterns.
 
@@ -209,33 +215,60 @@ Consider this MAME database file extract:
 Applying both --del-if-description-has and --del-if-manufacturer-has with *bootleg* pattern will remove both asteroib and boggy84.
 
 ### Delete all ROMs having given parent BIOS(es)
+
 Call pyrsc like this:
 ```
-python3 pyrsc.py --roms-dir=~/myRoms --dat-file=fba.dat --del-if-bios-is "nmk004 ym2608"
+python3 pyrsc.py --roms-dir=~/myRoms --dat-file=fba.dat --del-if-bios-is="nmk004 ym2608"
 ```
 From the input .dat file analysis, all ROMs which are found having a parent NMK004 or YM2608 BIOS will be removed.
 
 ### Delete all ROMs not having given parent BIOS(es)
+
 Call pyrsc like this:
 ```
-python3 pyrsc.py --roms-dir=~/myRoms --dat-file=fba.dat --del-if-bios-isnt "neogeo"
+python3 pyrsc.py --roms-dir=~/myRoms --dat-file=fba.dat --del-if-bios-isnt="neogeo"
 ```
 From the input .dat file analysis, all ROMs which are found not having a parent NEOGEO BIOS, e.g. having a NMK004 or YM2608 BIOS, will be removed.
 
 ### Delete all duplicate ROMs amongst 2 different ROM directories
+
 Call pyrsc like this:
 ```
-python3 pyrsc.py --roms-dir=~/fbaRoms --dat-file=fba.dat --ref-roms-dir=~/mameRoms --del-duplicates
+python3 pyrsc.py --roms-dir=~/fbNeo --dat-file=fba.dat --ref-roms-dir=~/mameRoms --del-duplicates
 ```
-From comparing file names and files sizes (but not checksums...), any file in ~/fbaRoms that would be found identical in ~/mameRoms will be removed from ~/fbaRoms.
+From comparing file names and files sizes (but not checksums...), any file in ~/fbNeo that would be found identical in ~/mameRoms will be removed from ~/fbNeo.
 
-The input fba.dat is used to identify BIOS files in ~/fbaRoms, to avoid removing them. 
+The input fba.dat is used to identify BIOS files in ~/fbNeo, to avoid removing them. 
 
 ### Flatten a tree-like ROM directory structure
+
 Call pyrsc like this:
 ```
-python3 pyrsc.py --roms-dir=~/fbaRoms --make-flat
+python3 pyrsc.py --roms-dir=~/fbNeo --make-flat
 ```
-This will move all files found in ~/fbaRoms subdirectories directly under ~/fbaRoms, then remove all subdirectories.
+This will move all files found in ~/fbNeo subdirectories directly under ~/fbNeo, then remove all subdirectories.
 
-In case of duplicate names in the tree structure, we do not overwritte files under ~/fbaRoms. When a potential conflict is detected, the file is not moved, subdirectories possibly remain with unmoved/conflictual files inside. 
+In case of duplicate names in the tree structure, we do not overwritte files under ~/fbNeo. When a potential conflict is detected, the file is not moved, subdirectories possibly remain with unmoved/conflictual files inside. 
+
+### Typical actual series of commands on a console-like ROM sets
+
+Call pyrsc, in a row, in this specific order:
+```
+python3 pyrsc.py --roms-dir=~/gba --del-files-without="*.zip*"      --dry-run
+python3 pyrsc.py --roms-dir=~/gba --del-variants-with="*Japan*"     --dry-run
+python3 pyrsc.py --roms-dir=~/gba --del-variants-without="*Europe*" --dry-run
+python3 pyrsc.py --roms-dir=~/gba --del-files-with="*Hack* * Test * *Preview* *Debugged* *protected* *Proto* *Alternate* *Beta* *Demo * *(Demo)* *[BIOS]* *Diagnostic* *SDK* *Program* *Sample* *(Pirate)* *Rev 1* *Rev A* *Virtual Console* *Unl* *Gamecube* *Test Cartridge* *Competition Cart* *(Arcade)* *Switch Online* *Mini)* *J-Cart* *Online* *Keyboard* *Disc * *NFL * *NHL * *NBA * *ESPN* *NCAA* *Baseball* *chess* *Mahjong* *Hockey* *golf* *rugby* *LodgeNet* *4 in 1* *4-in-1* *8-in-1* *16-in-1* *32-in-1* *64-in-1* *128-in-1* *Compilation* *Utils* *ZZZ* *2 in 1* *2-in-1* *2 Games in 1* *2 Games in One* *2 in 1 Game* *2 Game Pack* *3 Game Pack* *3 Games in One* *3 Games in 1* *2 Jeux en 1* *2 Great Games* *2 Disney Games* *4 in One* *5 in One*" --dry-run
+```
+
+### Typical actual series of commands on an arcade-like ROM sets
+
+Call pyrsc, in a row, in this specific order:
+```
+python3 pyrsc.py --roms-dir=~/fbNeo --make-flat
+python3 pyrsc.py --roms-dir=~/fbNeo --dat-file ~/fbNeo/fbNeo.dat --del-clones
+python3 pyrsc.py --roms-dir=~/fbNeo --dat-file ~/fbNeo/fbNeo.dat --del-roms-with-samples
+python3 pyrsc.py --roms-dir=~/fbNeo --dat-file ~/fbNeo/fbNeo.dat --del-if-description-has "*broken* *bootleg* *hack* *demo* *prototype* *japan*"
+python3 pyrsc.py --roms-dir=~/fbNeo --dat-file ~/fbNeo/fbNeo.dat --del-if-manufacturer-has "*hack* *bootleg*"
+python3 pyrsc.py --roms-dir=~/fbNeo --dat-file=~/fbNeo/fbNeo.dat --del-if-comment-has="*issue* *demo* *hack* *incomplete* *imperfect* *broke* *missing* *corrupt* *glitch* *wrong* *bad* *fail* *bug* *bootleg* *prototype* *no sound*"
+python3 pyrsc.py --roms-dir=~/fbNeo --dat-file ~/fbNeo/fbNeo.dat --del-if-bios-isnt "neogeo"
+```

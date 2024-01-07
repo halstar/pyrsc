@@ -700,7 +700,7 @@ def main(argv=None):
                     '       ' + len(program_name) * ' ' + ' [--del-roms-with-samples]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-older-than=INT]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-description-has=STRING]\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-if-manufacturer-haas=STRING]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-if-manufacturer-has=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-comment-has=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-bios-is=STRING]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-if-bios-isnt=STRING]\n' \
