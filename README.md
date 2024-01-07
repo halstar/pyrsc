@@ -65,7 +65,7 @@ python3 pyrsc.py --roms-dir=~/myRoms --del-files-without="*[!]* *.zip*"
 ```
 Any file in ~/myRoms NOT having "[!]" and ".zip", etc. in its name will be removed.
 
-### Delete fist variants of all ROMs
+### Delete first variants of all ROMs
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --del-first-variants 
@@ -94,6 +94,37 @@ Annals Of Rome (1987)(Magic)[a2].zip
 ...
 ```
 Applying --del-last-variants will remove last 2 variants of this ROM, that is [a] and [a2] variants.
+
+### Delete variants matching patterns
+Call pyrsc like this:
+```
+python3 pyrsc.py --roms-dir=~/myRoms --del-variants-with="*Japan*"
+```
+Consider this case, having the following ROMs under ~/myRoms:
+```
+...
+Beatmania (Europe).chd
+Beatmania (Japan).chd
+Beatmania (USA).chd
+...
+```
+Applying --del-variants-with will remove Japan variants of this ROM, keeping Europe & USA versions.
+
+### Delete variants not matching patterns
+Call pyrsc like this:
+```
+python3 pyrsc.py --roms-dir=~/myRoms --del-variants-without="*Europe*"
+```
+Consider this case, having the following ROMs under ~/myRoms:
+```
+...
+Animal Football (Brazil).chd
+Animal Football (Europe) (En,Fr,De).chd
+Animal Football (Japan, USA).chd
+Animal Football (Korea).chd
+...
+```
+Applying --del-variants-without will remove all variants of this ROM but Europe version.
 
 ### Delete PAL or NTSC variants of all ROMs
 Call pyrsc like this:
@@ -149,14 +180,15 @@ python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-roms-older-than 1
 ```
 From the input .dat file analysis, this will delete all ROMs tagged with a date prior 1996.
 
-### Delete all ROMs with description/manufacturer matching patterns 
+### Delete all ROMs with description/manufacturer/comment matching patterns 
 
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-if-description-has "*broken* *bootleg* *hack* *demo* *prototype*"
 python3 pyrsc.py --roms-dir=~/myRoms --dat-file=mame.dat --del-if-manufacturer-has "*hack* *bootleg*"
+python3 pyrsc.py --roms-dir=~/myRoms --dat-filemame.dat  --del-if-comment-has "*issue* *demo* *hack* *incomplete* *imperfect*"
 ```
-From the input .dat file analysis, this will delete all ROMs which description/manufacturer attributes matches the any the input patterns.
+From the input .dat file analysis, this will delete all ROMs which description/manufacturer/comment attributes match the any the input patterns.
 
 Consider this MAME database file extract:
 ```
@@ -174,7 +206,7 @@ Consider this MAME database file extract:
     ...
 </game>
 ```
-Applying both --del-if-description-has and  --del-if-manufacturer-has with *bootleg* pattern will remove both asteroib and boggy84.
+Applying both --del-if-description-has and --del-if-manufacturer-has with *bootleg* pattern will remove both asteroib and boggy84.
 
 ### Delete all ROMs having given parent BIOS(es)
 Call pyrsc like this:

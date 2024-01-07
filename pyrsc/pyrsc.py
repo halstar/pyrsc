@@ -669,6 +669,17 @@ def del_if_bios_is(path_to_roms_dir, path_to_dat_file, input_bios_list_string, d
     return 0
 
 
+def get_files_count(path_to_roms_dir):
+
+    files_count = 0
+
+    for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
+        for filename in filenames:
+            files_count += 1
+    
+    return files_count
+
+
 def main(argv=None):
 
     global LOG_LEVEL
@@ -1016,7 +1027,7 @@ def main(argv=None):
     if DELETED_FILES_COUNT == 0:
         log(1, "No matching file")
     else:
-        log(1, "\nMatching files count: " + str(DELETED_FILES_COUNT))
+        log(1, "\nMatching files count: " + str(DELETED_FILES_COUNT) + " / " + str(get_files_count(opts.roms_dir)))
 
 
 # Module run in main mode
