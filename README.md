@@ -234,11 +234,17 @@ From the input .dat file analysis, all ROMs which are found not having a parent 
 
 Call pyrsc like this:
 ```
-python3 pyrsc.py --roms-dir=~/fbNeo --dat-file=fba.dat --ref-roms-dir=~/mameRoms --del-duplicates
+python3 pyrsc.py --roms-dir=~/myRoms --dat-file=fba.dat --ref-roms-dir=~/mameRoms --del-duplicates
 ```
-From comparing file names and files sizes (but not checksums...), any file in ~/fbNeo that would be found identical in ~/mameRoms will be removed from ~/fbNeo.
+From comparing file names and files sizes (but not checksums...), any file in ~/myRoms that would be found identical in ~/mameRoms will be removed from ~/myRoms.
 
-The input fba.dat is used to identify BIOS files in ~/fbNeo, to avoid removing them. 
+### Delete all ROMs that could not be scraped
+
+Call pyrsc like this:
+```
+python3 pyrsc.py --roms-dir=~/myRoms --del-roms-without-image
+```
+Delete all ROMs that have no PNG image in media/images directory. Of course, this should be executed after ROMs scraping.
 
 ### Flatten a tree-like ROM directory structure
 
@@ -258,6 +264,10 @@ python3 pyrsc.py --roms-dir=~/gba --del-files-without="*.zip*"      --dry-run
 python3 pyrsc.py --roms-dir=~/gba --del-variants-with="*Japan*"     --dry-run
 python3 pyrsc.py --roms-dir=~/gba --del-variants-without="*Europe*" --dry-run
 python3 pyrsc.py --roms-dir=~/gba --del-files-with="*Hack* * Test * *Preview* *Debugged* *protected* *Proto* *Alternate* *Beta* *Demo * *(Demo)* *[BIOS]* *Diagnostic* *SDK* *Program* *Sample* *(Pirate)* *Rev 1* *Rev A* *Virtual Console* *Unl* *Gamecube* *Test Cartridge* *Competition Cart* *(Arcade)* *Switch Online* *Mini)* *J-Cart* *Online* *Keyboard* *Disc * *NFL * *NHL * *NBA * *ESPN* *NCAA* *Baseball* *chess* *Mahjong* *Hockey* *golf* *rugby* *LodgeNet* *4 in 1* *4-in-1* *8-in-1* *16-in-1* *32-in-1* *64-in-1* *128-in-1* *Compilation* *Utils* *ZZZ* *2 in 1* *2-in-1* *2 Games in 1* *2 Games in One* *2 in 1 Game* *2 Game Pack* *3 Game Pack* *3 Games in One* *3 Games in 1* *2 Jeux en 1* *2 Great Games* *2 Disney Games* *4 in One* *5 in One*" --dry-run
+```
+Scraping images for the ROMs kept so far.
+```
+python3 pyrsc.py --roms-dir=~/myRoms --del-roms-without-image
 ```
 
 ### Typical actual series of commands on an arcade-like ROM sets
