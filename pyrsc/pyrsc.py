@@ -229,11 +229,11 @@ def del_pal_or_ntsc_files(path_to_roms_dir, del_ntsc_versions):
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
-            file_attributes = {}
-            file_attributes['parent_dir'] = dirname
-            file_attributes['name'] = filename
-            file_attributes['rom'] = filename.split("(")[0].strip().lower()
-            file_attributes['full_name'] = os.path.join(dirname, filename)
+            file_attributes                  = {}
+            file_attributes['parent_dir']    = dirname
+            file_attributes['name']          = filename
+            file_attributes['rom']           = filename.split("(")[0].strip().lower()
+            file_attributes['full_name']     = os.path.join(dirname, filename)
             file_attributes['to_be_deleted'] = False
             if '(PAL' in filename:
                 file_attributes['is_pal'] = True
@@ -257,6 +257,44 @@ def del_pal_or_ntsc_files(path_to_roms_dir, del_ntsc_versions):
                             else:
                                 file['to_be_deleted'] = True
                             break
+
+    for file in files_list:
+        if file['to_be_deleted']:
+            if IS_DRY_RUN:
+                log(1, "Would delete: " + file['name'])
+            else:
+                log(1, "Deleting: " + file['name'])
+                os.remove(file['full_name'])
+            DELETED_FILES_COUNT += 1
+
+    return 0
+
+def del_roms_without_image(path_to_roms_dir):
+
+    global DELETED_FILES_COUNT
+
+    log(0, "\nRemoving ROMs without a PNG image...\n")
+
+    files_list = []
+
+    for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
+        for filename in filenames:
+            file_attributes               = {}
+            file_attributes['parent_dir'] = dirname
+            file_attributes['name']       = filename
+            file_attributes['rom']        = os.path.splitext(filename)[0]
+            file_attributes['extension']  = os.path.splitext(filename)[1]
+            file_attributes['full_name']  = os.path.join(dirname, filename)
+            
+            if file_attributes['extension'] == '.png' or file_attributes['extension'] == '.xml' or file_attributes['extension'] == '.txt':
+                pass
+            else:
+                image_path = os.path.join(file_attributes['parent_dir'], 'media', 'images', file_attributes['rom']) + '.png'
+                if os.path.isfile(image_path.replace("\\","/")):
+                    file_attributes['to_be_deleted'] = False
+                else:
+                    file_attributes['to_be_deleted'] = True
+                files_list.append(file_attributes)
 
     for file in files_list:
         if file['to_be_deleted']:
@@ -695,6 +733,7 @@ def main(argv=None):
                     '       ' + len(program_name) * ' ' + ' [--del-first-variants] [--del-last-variants]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-variants-with] [--del-variants-without]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-ntsc-versions] [--del-pal-versions]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-roms-without-image]\n' \
                     '       *** Cleaning based on .dat file analysis\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-clones]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-with-samples]\n' \
@@ -794,6 +833,11 @@ def main(argv=None):
                           action="store_true",
                           dest="del_pal_versions",
                           help="in case PAL version of a NTSC ROM is found, delete this PAL last version & keep NTSC one")
+        parser.add_option("-q",
+                          "--del-roms-without-image",
+                          action="store_true",
+                          dest="del_roms_without_image",
+                          help="in case a ROM has no PNG image in media/images directory, delete ROM")
         parser.add_option("-u",
                           "--del-duplicates",
                           action="store_true",
@@ -956,6 +1000,11 @@ def main(argv=None):
 
     if opts.del_pal_versions:
         status = del_pal_or_ntsc_files(opts.roms_dir, False)
+        if status != 0:
+            return status
+
+    if opts.del_roms_without_image:
+        status = del_roms_without_image(opts.roms_dir)
         if status != 0:
             return status
 
