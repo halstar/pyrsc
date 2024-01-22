@@ -8,6 +8,7 @@ Python-based ROMs Set Cleaner, to help and clean large ROM sets from undesired R
 import os
 import os.path
 import shutil
+import glob
 import sys
 import re
 from optparse import OptionParser
@@ -307,6 +308,43 @@ def del_roms_without_image(path_to_roms_dir):
 
     return 0
 
+def del_images_without_rom(path_to_roms_dir):
+
+    global DELETED_FILES_COUNT
+
+    log(0, "\nRemoving PNGs without a ROM file...\n")
+
+    files_list = []
+
+    for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
+        for filename in filenames:
+            file_attributes               = {}
+            file_attributes['parent_dir'] = dirname
+            file_attributes['name']       = filename
+            file_attributes['rom']        = os.path.splitext(filename)[0]
+            file_attributes['extension']  = os.path.splitext(filename)[1]
+            file_attributes['full_name']  = os.path.join(dirname, filename)
+            
+            if file_attributes['extension'] != '.png':
+                pass
+            else:
+                rom_path = os.path.join(file_attributes['parent_dir'], '..', '..', glob.escape(file_attributes['rom'])) + '.*'
+                if len(glob.glob(rom_path.replace("\\","/"))) == 0:
+                    file_attributes['to_be_deleted'] = True
+                else:
+                    file_attributes['to_be_deleted'] = False
+                files_list.append(file_attributes)
+
+    for file in files_list:
+        if file['to_be_deleted']:
+            if IS_DRY_RUN:
+                log(1, "Would delete: " + file['name'])
+            else:
+                log(1, "Deleting: " + file['name'])
+                os.remove(file['full_name'])
+            DELETED_FILES_COUNT += 1
+
+    return 0
 
 def del_variant_files(path_to_roms_dir, del_first_variants):
 
@@ -713,7 +751,9 @@ def get_files_count(path_to_roms_dir):
 
     for dirname, dirnames, filenames in os.walk(path_to_roms_dir):
         for filename in filenames:
-            files_count += 1
+            file_extension  = os.path.splitext(filename)[1]
+            if file_extension != '.png' and file_extension != '.xml' and file_extension != '.txt':
+                files_count += 1
     
     return files_count
 
@@ -729,11 +769,11 @@ def main(argv=None):
     program_version_string = '%%prog %s (%s)' % (program_version, program_build_date)
     program_usage          = 'usage: %prog [-h] [--verbose=INT] [--dry-run] --roms-dir=STRING [--dat-file=STRING]\n' \
                     '       *** Cleaning based on file names\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-files-with=STRING] [--del-files-without=STRING]\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-first-variants] [--del-last-variants]\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-variants-with] [--del-variants-without]\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-ntsc-versions] [--del-pal-versions]\n' \
-                    '       ' + len(program_name) * ' ' + ' [--del-roms-without-image]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-files-with=STRING]  [--del-files-without=STRING]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-first-variants]     [--del-last-variants]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-variants-with]      [--del-variants-without]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-ntsc-versions]      [--del-pal-versions]\n' \
+                    '       ' + len(program_name) * ' ' + ' [--del-roms-without-image] [--del-images-without-rom]\n' \
                     '       *** Cleaning based on .dat file analysis\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-clones]\n' \
                     '       ' + len(program_name) * ' ' + ' [--del-roms-with-samples]\n' \
@@ -838,6 +878,11 @@ def main(argv=None):
                           action="store_true",
                           dest="del_roms_without_image",
                           help="in case a ROM has no PNG image in media/images directory, delete ROM")
+        parser.add_option("-x",
+                          "--del-images-without-rom",
+                          action="store_true",
+                          dest="del_images_without_rom",
+                          help="in case a PNG image in media/images directory has no ROM, delete PNG")
         parser.add_option("-u",
                           "--del-duplicates",
                           action="store_true",
@@ -1005,6 +1050,11 @@ def main(argv=None):
 
     if opts.del_roms_without_image:
         status = del_roms_without_image(opts.roms_dir)
+        if status != 0:
+            return status
+
+    if opts.del_images_without_rom:
+        status = del_images_without_rom(opts.roms_dir)
         if status != 0:
             return status
 

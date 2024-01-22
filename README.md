@@ -238,13 +238,21 @@ python3 pyrsc.py --roms-dir=~/myRoms --dat-file=fba.dat --ref-roms-dir=~/mameRom
 ```
 From comparing file names and files sizes (but not checksums...), any file in ~/myRoms that would be found identical in ~/mameRoms will be removed from ~/myRoms.
 
-### Delete all ROMs that could not be scraped
+### Delete all ROMs with no images, i.e. all ROMs that could not be scraped
 
 Call pyrsc like this:
 ```
 python3 pyrsc.py --roms-dir=~/myRoms --del-roms-without-image
 ```
-Delete all ROMs that have no PNG image in media/images directory. Of course, this should be executed after ROMs scraping.
+Delete all ROMs that have no associated PNG image in media/images directory. Of course, this should be executed after ROMs scraping.
+
+### Delete all images with no ROMs
+
+Call pyrsc like this:
+```
+python3 pyrsc.py --roms-dir=~/myRoms --del-images-without-rom
+```
+Delete all PNG images in media/images ROMs that have no associated ROM. This could be executed in case some ROMs are manually deleted.
 
 ### Flatten a tree-like ROM directory structure
 
